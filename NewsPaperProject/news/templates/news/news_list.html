@@ -1,0 +1,33 @@
+{% extends 'news/default.html' %}
+{% load news_filters %}  <!-- ← ЗАГРУЖАЕМ НАШИ ФИЛЬТРЫ -->
+
+{% block content %}
+    <h2>Все новости</h2>
+    <p><strong>Всего новостей: {{ news|length }}</strong></p>
+
+    {% if news %}
+        <table border="1" cellpadding="10" cellspacing="0" width="100%">
+            <tr>
+                <th>Заголовок</th>
+                <th>Дата</th>
+                <th>Превью</th>
+            </tr>
+
+            {% for item in news %}
+            <tr>
+                <td>
+                    <a href="{% url 'news_detail' news_id=item.id %}">
+                        {{ item.title|censor }}  <!-- ← ПРИМЕНЯЕМ ФИЛЬТР К ЗАГОЛОВКУ -->
+                    </a>
+                </td>
+                <td>{{ item.created_at|date:"d.m.Y" }}</td>
+                <td>
+                    {{ item.text|censor|truncatewords:20 }}  <!-- ← К ТЕКСТУ ТОЖЕ -->
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>Новостей пока нет.</p>
+    {% endif %}
+{% endblock %}
