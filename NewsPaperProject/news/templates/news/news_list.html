@@ -1,9 +1,11 @@
 {% extends 'news/default.html' %}
-{% load news_filters %}  <!-- ← ЗАГРУЖАЕМ НАШИ ФИЛЬТРЫ -->
+{% load news_filters %}
+
+{% block title %}Все новости{% endblock %}
 
 {% block content %}
     <h2>Все новости</h2>
-    <p><strong>Всего новостей: {{ news|length }}</strong></p>
+    <p><strong>Всего новостей: {{ paginator.count }}</strong></p>
 
     {% if news %}
         <table border="1" cellpadding="10" cellspacing="0" width="100%">
@@ -17,16 +19,37 @@
             <tr>
                 <td>
                     <a href="{% url 'news_detail' news_id=item.id %}">
-                        {{ item.title|censor }}  <!-- ← ПРИМЕНЯЕМ ФИЛЬТР К ЗАГОЛОВКУ -->
+                        {{ item.title|censor }}
                     </a>
                 </td>
                 <td>{{ item.created_at|date:"d.m.Y" }}</td>
-                <td>
-                    {{ item.text|censor|truncatewords:20 }}  <!-- ← К ТЕКСТУ ТОЖЕ -->
-                </td>
+                <td>{{ item.text|censor|truncatewords:20 }}</td>
             </tr>
             {% endfor %}
         </table>
+
+        <!-- Пагинация -->
+        {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">Первая</a>
+                <a href="?page={{ page_obj.previous_page_number }}">←</a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <strong>{{ num }}</strong>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">→</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">Последняя</a>
+            {% endif %}
+        </div>
+        {% endif %}
     {% else %}
         <p>Новостей пока нет.</p>
     {% endif %}

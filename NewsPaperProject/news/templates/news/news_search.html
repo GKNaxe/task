@@ -1,0 +1,39 @@
+{% extends 'news/default.html' %}
+{% load news_filters %}
+
+{% block content %}
+    <h2>Поиск новостей</h2>
+
+    <!-- ФОРМА ПОИСКА -->
+    <form method="GET">
+        {{ filterset.form.as_p }}
+        <button type="submit">Найти</button>
+    </form>
+
+    <hr>
+
+    {% if news %}
+        <p>Найдено: {{ paginator.count }}</p>
+        <table border="1" cellpadding="10" cellspacing="0" width="100%">
+            <tr>
+                <th>Заголовок</th>
+                <th>Дата</th>
+                <th>Автор</th>
+                <th>Превью</th>
+            </tr>
+            {% for item in news %}
+            <tr>
+                <td><a href="{% url 'news_detail' news_id=item.id %}">{{ item.title|censor }}</a></td>
+                <td>{{ item.created_at|date:"d.m.Y" }}</td>
+                <td>{{ item.author.user.username }}</td>
+                <td>{{ item.text|censor|truncatewords:20 }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <!-- ПАГИНАЦИЯ -->
+        {% include 'news/pagination.html' %}
+    {% else %}
+        <p>Новостей не найдено</p>
+    {% endif %}
+{% endblock %}
