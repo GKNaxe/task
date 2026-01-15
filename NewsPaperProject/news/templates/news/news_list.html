@@ -1,56 +1,36 @@
 {% extends 'news/default.html' %}
-{% load news_filters %}
-
-{% block title %}Все новости{% endblock %}
+{% load auth_extras %}
 
 {% block content %}
-    <h2>Все новости</h2>
-    <p><strong>Всего новостей: {{ paginator.count }}</strong></p>
+<div class="news-list">
+    {% for news in news_list %}
+    <div class="news-item">
+        <h3><a href="{% url 'news_detail' news.id %}">{{ news.title }}</a></h3>
+        <p>{{ news.text|truncatewords:30 }}</p>
+        <small>
+            Автор: {{ news.author.username }} |
+            Дата: {{ news.created_at|date:"d.m.Y H:i" }} |
+            Тип: {{ news.get_post_type_display }}
+        </small>
 
-    {% if news %}
-        <table border="1" cellpadding="10" cellspacing="0" width="100%">
-            <tr>
-                <th>Заголовок</th>
-                <th>Дата</th>
-                <th>Превью</th>
-            </tr>
-
-            {% for item in news %}
-            <tr>
-                <td>
-                    <a href="{% url 'news_detail' news_id=item.id %}">
-                        {{ item.title|censor }}
-                    </a>
-                </td>
-                <td>{{ item.created_at|date:"d.m.Y" }}</td>
-                <td>{{ item.text|censor|truncatewords:20 }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-
-        <!-- Пагинация -->
-        {% if is_paginated %}
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-                <a href="?page=1">Первая</a>
-                <a href="?page={{ page_obj.previous_page_number }}">←</a>
-            {% endif %}
-
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <strong>{{ num }}</strong>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <a href="?page={{ num }}">{{ num }}</a>
-                {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}">→</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}">Последняя</a>
-            {% endif %}
+        <!-- Показываем кнопки редактирования/удаления только автору -->
+        {% if user.is_authenticated and user == news.author and user|has_group:'authors' %}
+        <div class="news-actions">
+            <a href="{% url 'news_edit' news.id %}" class="btn btn-sm btn-primary">Редактировать</a>
+            <a href="{% url 'news_delete' news.id %}" class="btn btn-sm btn-danger">Удалить</a>
         </div>
         {% endif %}
-    {% else %}
-        <p>Новостей пока нет.</p>
-    {% endif %}
+    </div>
+    {% empty %}
+    <p>Новостей пока нет.</p>
+    {% endfor %}
+</div>
+
+<!-- Кнопка создания новости показывается только авторам -->
+{% if user.is_authenticated and user|has_group:'authors' %}
+<div style="margin-top: 20px;">
+    <a href="{% url 'news_create' %}" class="btn btn-success">Создать новость</a>
+    <a href="{% url 'article_create' %}" class="btn btn-info">Создать статью</a>
+</div>
+{% endif %}
 {% endblock %}

@@ -1,23 +1,172 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>{% block title %}News Portal{% endblock %}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Новостной портал{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .header a:hover {
+            text-decoration: underline;
+        }
+        .user-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .bg-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .content {
+            padding: 20px;
+        }
+        .nav-links {
+            margin: 20px 0;
+        }
+        .nav-links a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #007bff;
+        }
+        .messages {
+            margin: 20px 0;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
 </head>
 <body>
-    <header>
+    <div class="header">
         <h1><a href="/news/">Новостной портал</a></h1>
-        <nav>
-            <a href="/news/">Все новости</a>
-        </nav>
-    </header>
 
-    <main>
+        <!-- Навигация и информация о пользователе -->
+        <div class="nav-user">
+            {% load auth_extras %}
+
+            {% if user.is_authenticated %}
+                <span style="color: #ffcc00;">Привет, {{ user.username }}!</span>
+
+                <!-- Проверка, является ли пользователь автором -->
+                {% if user|has_group:'authors' %}
+                    <span class="badge bg-success">✓ Автор</span>
+                {% else %}
+                    <a href="{% url 'become_author' %}" class="btn btn-success">
+                        Стать автором
+                    </a>
+                {% endif %}
+
+                <a href="{% url 'account_logout' %}" class="btn btn-secondary">Выйти</a>
+            {% else %}
+                <a href="{% url 'account_login' %}" class="btn btn-primary">Войти</a>
+                <a href="{% url 'account_signup' %}" class="btn btn-secondary">Регистрация</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Сообщения (например, после нажатия "Стать автором") -->
+    <div class="messages">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Навигационные ссылки -->
+    <div class="nav-links" style="background-color: #e9ecef; padding: 15px;">
+        <a href="{% url 'news_list' %}">Все новости</a>
+        <a href="{% url 'news_search' %}">Поиск</a>
+
+        {% if user.is_authenticated and user|has_group:'authors' %}
+            <a href="{% url 'news_create' %}">Создать новость</a>
+            <a href="{% url 'article_create' %}">Создать статью</a>
+        {% endif %}
+
+        <a href="/admin/" target="_blank">Админка</a>
+    </div>
+
+    <!-- Основное содержимое -->
+    <div class="content">
         {% block content %}
+        <!-- Здесь будет содержимое конкретной страницы -->
         {% endblock %}
-    </main>
+    </div>
 
-    <footer>
-        <p>&copy; 2023 News Portal</p>
-    </footer>
+    <div style="text-align: center; margin-top: 50px; padding: 20px; background-color: #333; color: white;">
+        <p>© 2025 Новостной портал. Все права защищены.</p>
+        <p>
+            {% if user.is_authenticated %}
+                Ваши группы:
+                {% for group in user.groups.all %}
+                    <span style="background: #555; padding: 3px 8px; border-radius: 3px; margin: 0 5px;">
+                        {{ group.name }}
+                    </span>
+                {% empty %}
+                    <span style="color: #ccc;">нет групп</span>
+                {% endfor %}
+            {% endif %}
+        </p>
+    </div>
 </body>
 </html>

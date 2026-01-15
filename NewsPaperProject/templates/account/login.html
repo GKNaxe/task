@@ -1,0 +1,12 @@
+{% extends 'news/default.html' %}
+
+{% block content %}
+<h2>Вход</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Войти</button>
+</form>
+<p>Нет аккаунта? <a href="{% url 'account_signup' %}">Зарегистрироваться</a></p>
+<p><a href="{% url 'account_reset_password' %}">Забыли пароль?</a></p>
+{% endblock %}
