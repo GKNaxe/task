@@ -1,0 +1,145 @@
+{% extends 'news/default.html' %}
+{% load auth_extras %}
+
+{% block content %}
+<div class="subscription-settings" style="max-width: 800px; margin: 0 auto;">
+    <h2 style="color: #333; margin-bottom: 30px;">⚙️ Настройки подписок</h2>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" style="padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Статистика -->
+    <div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+        <h3 style="margin-top: 0;">📊 Ваша активность</h3>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; flex: 1; min-width: 150px;">
+                <div style="font-size: 32px; font-weight: bold; color: #4c51bf;">{{ subscriptions.count }}</div>
+                <div style="color: #718096;">Активных подписок</div>
+            </div>
+            <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; flex: 1; min-width: 150px;">
+                <div style="font-size: 32px; font-weight: bold; color: #38a169;">{{ total_categories }}</div>
+                <div style="color: #718096;">Всего категорий</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div style="background-color: #e6fffa; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+        <h3 style="margin-top: 0;">🚀 Быстрые действия</h3>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <form method="post" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="subscribe_all">
+                <button type="submit" style="padding: 12px 25px; background-color: #38a169; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    📥 Подписаться на все категории
+                </button>
+            </form>
+
+            <form method="post" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="unsubscribe_all">
+                <button type="submit" style="padding: 12px 25px; background-color: #e53e3e; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    📤 Отписаться от всех
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Активные подписки -->
+    <div style="margin-bottom: 30px;">
+        <h3>✅ Ваши активные подписки</h3>
+
+        {% if subscriptions %}
+        <div style="margin-top: 20px;">
+            {% for subscription in subscriptions %}
+            <div style="background-color: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h4 style="margin: 0 0 8px 0;">{{ subscription.category.name }}</h4>
+                    <p style="margin: 0; color: #718096; font-size: 14px;">
+                        Подписаны с: {{ subscription.subscribed_at|date:"d.m.Y" }}
+                        {% if subscription.last_weekly_email %}
+                            <br>Последняя рассылка: {{ subscription.last_weekly_email|date:"d.m.Y H:i" }}
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div>
+                    <a href="{% url 'unsubscribe' subscription.category.id %}"
+                       style="padding: 8px 15px; background-color: #e53e3e; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;">
+                        Отписаться
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px; background-color: #f7fafc; border-radius: 8px;">
+            <p style="color: #718096; font-size: 18px;">У вас нет активных подписок</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Доступные категории -->
+    {% if available_categories %}
+    <div style="margin-bottom: 30px;">
+        <h3>📋 Категории для подписки</h3>
+
+        <div style="margin-top: 20px;">
+            {% for category in available_categories %}
+            <div style="background-color: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                <span>{{ category.name }}</span>
+                <a href="{% url 'subscribe' category.id %}"
+                   style="padding: 6px 12px; background-color: #38a169; color: white; text-decoration: none; border-radius: 5px; font-size: 13px;">
+                    Подписаться
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Настройки уведомлений -->
+    <div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px;">
+        <h3 style="margin-top: 0;">🔔 Настройки уведомлений</h3>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_frequency">
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600;">
+                    Частота еженедельной рассылки:
+                </label>
+                <select name="frequency" style="padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; width: 200px;">
+                    <option value="weekly">Еженедельно (по воскресеньям)</option>
+                    <option value="biweekly">Раз в две недели</option>
+                    <option value="monthly">Ежемесячно</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <input type="checkbox" name="instant_notifications" checked style="margin-right: 10px;">
+                    <span>Мгновенные уведомления о новых статьях</span>
+                </label>
+
+                <label style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <input type="checkbox" name="weekly_digest" checked style="margin-right: 10px;">
+                    <span>Еженедельная рассылка с обзором статей</span>
+                </label>
+            </div>
+
+            <button type="submit" style="padding: 12px 25px; background-color: #4c51bf; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                Сохранить настройки
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

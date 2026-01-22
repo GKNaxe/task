@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+            margin-bottom: 0;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+        .content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .greeting {
+            font-size: 20px;
+            color: #2d3748;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .stats {
+            background-color: #edf2f7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .stats-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #4c51bf;
+        }
+        .stats-label {
+            color: #718096;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .period {
+            text-align: center;
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        .post-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .post-title {
+            color: #2d3748;
+            font-size: 20px;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .post-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #718096;
+        }
+        .post-meta-item {
+            display: flex;
+            align-items: center;
+        }
+        .post-meta-item i {
+            margin-right: 5px;
+        }
+        .post-excerpt {
+            color: #4a5568;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+        .read-more {
+            display: inline-block;
+            background-color: #4c51bf;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .read-more:hover {
+            background-color: #434190;
+        }
+        .category-tag {
+            display: inline-block;
+            background-color: #e9d8fd;
+            color: #553c9a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            color: #718096;
+            font-size: 14px;
+        }
+        .unsubscribe-link {
+            color: #718096;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .unsubscribe-link:hover {
+            text-decoration: underline;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #718096;
+        }
+        .empty-state h3 {
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📰 Еженедельная рассылка новостей</h1>
+        <p>Все самые интересные публикации за неделю</p>
+    </div>
+
+    <div class="content">
+        <div class="greeting">
+            Здравствуйте, <strong>{{ user.username }}</strong>!
+        </div>
+
+        <div class="period">
+            За период: {{ week_start|date:"d.m.Y" }} — {{ week_end|date:"d.m.Y" }}
+        </div>
+
+        {% if posts %}
+        <div class="stats">
+            <div class="stats-number">{{ post_count }}</div>
+            <div class="stats-label">новых статей за неделю</div>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <h3 style="color: #2d3748; margin-bottom: 20px;">📋 Ваши подписки:</h3>
+            {% for category in categories %}
+                <span class="category-tag">{{ category.name }}</span>
+            {% endfor %}
+        </div>
+
+        <h3 style="color: #2d3748; margin-bottom: 25px;">🎯 Новые публикации:</h3>
+
+        {% for post in posts %}
+        <div class="post-card">
+            <h2 class="post-title">{{ post.title }}</h2>
+
+            <div class="post-meta">
+                <span class="post-meta-item">📅 {{ post.created_at|date:"d.m.Y H:i" }}</span>
+                <span class="post-meta-item">👤 {{ post.author.username }}</span>
+                <span class="post-meta-item">
+                    🏷️
+                    {% for category in post.categories.all %}
+                        <span style="margin-left: 5px;">{{ category.name }}</span>
+                    {% endfor %}
+                </span>
+            </div>
+
+            <div class="post-excerpt">
+                {{ post.text|truncatechars:200 }}
+            </div>
+
+            <a href="http://127.0.0.1:8000/news/{{ post.id }}/" class="read-more">
+                Читать полностью →
+            </a>
+        </div>
+        {% endfor %}
+
+        {% else %}
+        <div class="empty-state">
+            <h3>😊 Пока тишина...</h3>
+            <p>На этой неделе в ваших подписках не появилось новых статей.</p>
+            <p>Но не расстраивайтесь — возможно, на следующей неделе будет интереснее!</p>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            <p>
+                Вы получили это письмо, потому что подписаны на еженедельную рассылку новостей.<br>
+                Если вы больше не хотите получать эти письма,
+                <a href="http://127.0.0.1:8000/news/unsubscribe-all/" class="unsubscribe-link">отпишитесь от всех рассылок</a>.
+            </p>
+            <p style="margin-top: 15px; font-size: 12px; color: #a0aec0;">
+                © 2025 Новостной портал. Все права защищены.<br>
+                Это автоматическое письмо, пожалуйста, не отвечайте на него.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

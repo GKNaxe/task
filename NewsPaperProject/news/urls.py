@@ -4,16 +4,13 @@ from . import views
 from django.contrib.auth import views as auth_views
 from .views import NewsListView, NewsDetailView
 from .views import NewsSearchView
+from .views import subscribe, unsubscribe, my_subscriptions
 from .views import (
-    NewsListView,
-    NewsDetailView,
-    NewsSearchView,
-    NewsCreateView,
-    NewsUpdateView,
-    NewsDeleteView,
-    ArticleCreateView,
-    ArticleUpdateView,
-    ArticleDeleteView
+    NewsListView, NewsDetailView, NewsSearchView,
+    NewsCreateView, NewsUpdateView, NewsDeleteView,
+    ArticleCreateView, ArticleUpdateView, ArticleDeleteView,
+    become_author, subscribe, unsubscribe, my_subscriptions,
+    CategoryNewsListView
 )
 from .views import become_author
 urlpatterns = [
@@ -36,4 +33,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('become-author/', become_author, name='become_author'),
+    path('category/<int:category_id>/', CategoryNewsListView.as_view(), name='category_news'),
+    path('category/<int:category_id>/subscribe/', subscribe, name='subscribe'),
+    path('category/<int:category_id>/unsubscribe/', unsubscribe, name='unsubscribe'),
+    path('my-subscriptions/', my_subscriptions, name='my_subscriptions'),
+    path('subscriptions/settings/', subscription_settings, name='subscription_settings'),
 ]

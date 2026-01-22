@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .post-title {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4CAF50;
+        }
+        .post-preview {
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: white;
+            border-left: 4px solid #4CAF50;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .category {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Новостной портал</h1>
+        <p>Новая публикация в вашей подписке</p>
+    </div>
+
+    <div class="content">
+        <h2 class="post-title">{{ post.title }}</h2>
+
+        <div style="margin-bottom: 20px;">
+            <span class="category">{{ category.name }}</span>
+            <span style="color: #666; margin-left: 10px;">
+                {{ post.created_at|date:"d.m.Y H:i" }}
+            </span>
+        </div>
+
+        <p style="font-size: 18px; color: #555;">
+            Здравствуй, <strong>{{ user.username }}</strong>. Новая статья в твоём любимом разделе!
+        </p>
+
+        <div class="post-preview">
+            <h3>Краткое содержание:</h3>
+            {{ post.text|truncatechars:150|safe }}
+
+            {% if post.text|length > 150 %}
+                <p style="color: #666; font-style: italic;">...</p>
+            {% endif %}
+        </div>
+
+        <a href="http://127.0.0.1:8000/news/{{ post.id }}/" class="btn">
+            Читать полную статью →
+        </a>
+
+        <div style="margin-top: 30px; padding: 15px; background-color: #fff3cd; border-radius: 5px;">
+            <p style="margin: 0;">
+                <strong>Автор:</strong> {{ post.author.username }}<br>
+                <strong>Категория:</strong> {{ category.name }}
+            </p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Вы получили это письмо, потому что подписаны на обновления категории "{{ category.name }}"</p>
+        <p>
+            <a href="http://127.0.0.1:8000/news/unsubscribe/{{ category.id }}/" style="color: #666;">
+                Отписаться от рассылки
+            </a>
+        </p>
+        <p>© 2025 Новостной портал. Все права защищены.</p>
+    </div>
+</body>
+</html>

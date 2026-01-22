@@ -1,36 +1,373 @@
 {% extends 'news/default.html' %}
 {% load auth_extras %}
 
-{% block content %}
-<div class="news-list">
-    {% for news in news_list %}
-    <div class="news-item">
-        <h3><a href="{% url 'news_detail' news.id %}">{{ news.title }}</a></h3>
-        <p>{{ news.text|truncatewords:30 }}</p>
-        <small>
-            Автор: {{ news.author.username }} |
-            Дата: {{ news.created_at|date:"d.m.Y H:i" }} |
-            Тип: {{ news.get_post_type_display }}
-        </small>
+{% block title %}Новостной портал - Последние новости{% endblock %}
 
-        <!-- Показываем кнопки редактирования/удаления только автору -->
-        {% if user.is_authenticated and user == news.author and user|has_group:'authors' %}
-        <div class="news-actions">
-            <a href="{% url 'news_edit' news.id %}" class="btn btn-sm btn-primary">Редактировать</a>
-            <a href="{% url 'news_delete' news.id %}" class="btn btn-sm btn-danger">Удалить</a>
+{% block content %}
+<div class="news-list-container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <div class="page-header" style="margin-bottom: 30px;">
+        <h1 style="color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 15px;">
+            📰 Последние новости
+        </h1>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}"
+                 style="padding: 15px; margin-bottom: 20px; border-radius: 8px;
+                        background-color: {% if message.tags == 'success' %}#d4edda{% elif message.tags == 'error' %}#f8d7da{% else %}#d1ecf1{% endif %};
+                        color: {% if message.tags == 'success' %}#155724{% elif message.tags == 'error' %}#721c24{% else %}#0c5460{% endif %};
+                        border: 1px solid {% if message.tags == 'success' %}#c3e6cb{% elif message.tags == 'error' %}#f5c6cb{% else %}#bee5eb{% endif %};">
+                {{ message }}
+            </div>
+            {% endfor %}
         </div>
         {% endif %}
+
+        <div class="list-info" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <div>
+                <p style="color: #666; margin: 0;">
+                    Всего новостей: <strong>{{ news_list.count }}</strong>
+                </p>
+            </div>
+
+            <div class="actions">
+                {% if user.is_authenticated and user|has_group:'authors' %}
+                <a href="{% url 'news_create' %}"
+                   class="btn btn-success"
+                   style="padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; margin-right: 10px;">
+                    ✏️ Создать новость
+                </a>
+                <a href="{% url 'article_create' %}"
+                   class="btn btn-info"
+                   style="padding: 10px 20px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 5px;">
+                    📝 Создать статью
+                </a>
+                {% endif %}
+            </div>
+        </div>
     </div>
-    {% empty %}
-    <p>Новостей пока нет.</p>
-    {% endfor %}
+
+    {% if news_list %}
+    <div class="news-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px;">
+        {% for news in news_list %}
+        <div class="news-card"
+             style="background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.08); transition: transform 0.3s, box-shadow 0.3s;">
+
+            <!-- Тип публикации -->
+            <div class="post-type" style="background-color: {% if news.post_type == 'NW' %}#3498db{% else %}#2ecc71{% endif %}; padding: 8px 15px;">
+                <span style="color: white; font-weight: bold; font-size: 12px; text-transform: uppercase;">
+                    {% if news.post_type == 'NW' %}Новость{% else %}Статья{% endif %}
+                </span>
+            </div>
+
+            <!-- Контент карточки -->
+            <div class="card-content" style="padding: 25px;">
+                <!-- Заголовок -->
+                <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 20px;">
+                    <a href="{% url 'news_detail' news.id %}"
+                       style="color: #2c3e50; text-decoration: none; transition: color 0.3s;">
+                        {{ news.title|truncatechars:70 }}
+                    </a>
+                </h3>
+
+                <!-- Краткий текст -->
+                <div class="news-preview" style="margin-bottom: 20px; color: #555; line-height: 1.6;">
+                    {{ news.text|truncatechars:150|linebreaks }}
+                </div>
+
+                <!-- Категории с кнопками подписки -->
+                {% if news.categories.all %}
+                <div class="categories-section" style="margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">
+                        📂 Категории:
+                    </h4>
+                    <div class="categories-list" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        {% for category in news.categories.all %}
+                        <div class="category-tag"
+                             style="display: inline-flex; align-items: center; background-color: #ecf0f1; padding: 5px 12px; border-radius: 20px; font-size: 13px;">
+
+                            <!-- Имя категории -->
+                            <a href="{% url 'category_news' category.id %}"
+                               style="color: #2c3e50; text-decoration: none; margin-right: 8px; font-weight: 500;">
+                                {{ category.name }}
+                            </a>
+
+                            <!-- Кнопка подписки -->
+                            {% if user.is_authenticated %}
+                            <div class="subscription-action">
+                                {% if user in category.subscribers.all %}
+                                <!-- Уже подписан - кнопка отписки -->
+                                <a href="{% url 'unsubscribe' category.id %}"
+                                   class="unsubscribe-btn"
+                                   style="display: inline-flex; align-items: center; justify-content: center;
+                                          width: 24px; height: 24px; background-color: #e74c3c; color: white;
+                                          border-radius: 50%; text-decoration: none; font-size: 12px;
+                                          transition: background-color 0.3s;"
+                                   title="Отписаться от {{ category.name }}">
+                                    ✕
+                                </a>
+                                {% else %}
+                                <!-- Не подписан - кнопка подписки -->
+                                <a href="{% url 'subscribe' category.id %}"
+                                   class="subscribe-btn"
+                                   style="display: inline-flex; align-items: center; justify-content: center;
+                                          width: 24px; height: 24px; background-color: #2ecc71; color: white;
+                                          border-radius: 50%; text-decoration: none; font-size: 14px;
+                                          transition: background-color 0.3s;"
+                                   title="Подписаться на {{ category.name }}">
+                                    +
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <!-- Не авторизован - ссылка на вход -->
+                            <a href="{% url 'account_login' %}?next={{ request.path }}"
+                               style="color: #3498db; font-size: 11px; margin-left: 5px; text-decoration: none;"
+                               title="Войдите, чтобы подписаться">
+                                войти
+                            </a>
+                            {% endif %}
+
+                            <!-- Количество подписчиков -->
+                            <span class="subscriber-count"
+                                  style="margin-left: 8px; font-size: 11px; color: #7f8c8d;"
+                                  title="{{ category.subscribers.count }} подписчиков">
+                                👥 {{ category.subscribers.count }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Информация об авторе и дате -->
+                <div class="news-meta" style="display: flex; justify-content: space-between; align-items: center;
+                                              margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <div class="author-info" style="color: #666; font-size: 14px;">
+                        <span style="color: #3498db; font-weight: bold;">{{ news.author.username }}</span>
+                        <span style="margin: 0 5px;">•</span>
+                        <span>{{ news.created_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+
+                    <!-- Статистика -->
+                    <div class="news-stats" style="font-size: 13px; color: #95a5a6;">
+                        <span title="Просмотры">👁️ 0</span>
+                        <span style="margin-left: 10px;" title="Комментарии">💬 0</span>
+                    </div>
+                </div>
+
+                <!-- Кнопки действий для автора -->
+                {% if user.is_authenticated and user == news.author and user|has_group:'authors' %}
+                <div class="author-actions"
+                     style="display: flex; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ddd;">
+
+                    {% if news.post_type == 'NW' %}
+                    <a href="{% url 'news_edit' news.id %}"
+                       class="btn btn-sm btn-primary"
+                       style="padding: 8px 15px; background-color: #3498db; color: white; text-decoration: none;
+                              border-radius: 4px; font-size: 13px; flex: 1; text-align: center;">
+                        Редактировать
+                    </a>
+                    <a href="{% url 'news_delete' news.id %}"
+                       class="btn btn-sm btn-danger"
+                       style="padding: 8px 15px; background-color: #e74c3c; color: white; text-decoration: none;
+                              border-radius: 4px; font-size: 13px; flex: 1; text-align: center;">
+                        Удалить
+                    </a>
+                    {% else %}
+                    <a href="{% url 'article_edit' news.id %}"
+                       class="btn btn-sm btn-primary"
+                       style="padding: 8px 15px; background-color: #3498db; color: white; text-decoration: none;
+                              border-radius: 4px; font-size: 13px; flex: 1; text-align: center;">
+                        Редактировать
+                    </a>
+                    <a href="{% url 'article_delete' news.id %}"
+                       class="btn btn-sm btn-danger"
+                       style="padding: 8px 15px; background-color: #e74c3c; color: white; text-decoration: none;
+                              border-radius: 4px; font-size: 13px; flex: 1; text-align: center;">
+                        Удалить
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Ховер эффект -->
+            <style>
+                .news-card:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                }
+                .news-card:hover h3 a {
+                    color: #3498db;
+                }
+                .subscribe-btn:hover {
+                    background-color: #27ae60 !important;
+                    transform: scale(1.1);
+                }
+                .unsubscribe-btn:hover {
+                    background-color: #c0392b !important;
+                    transform: scale(1.1);
+                }
+            </style>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Пагинация -->
+    {% if is_paginated %}
+    <div class="pagination" style="margin-top: 50px; text-align: center;">
+        <div style="display: inline-flex; gap: 10px; align-items: center;">
+            {% if page_obj.has_previous %}
+            <a href="?page=1"
+               style="padding: 8px 15px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px;">
+                &laquo; Первая
+            </a>
+            <a href="?page={{ page_obj.previous_page_number }}"
+               style="padding: 8px 15px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px;">
+                Назад
+            </a>
+            {% endif %}
+
+            <span style="padding: 8px 15px; background-color: #ecf0f1; border-radius: 5px;">
+                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}"
+               style="padding: 8px 15px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px;">
+                Вперед
+            </a>
+            <a href="?page={{ page_obj.paginator.num_pages }}"
+               style="padding: 8px 15px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px;">
+                Последняя &raquo;
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state" style="text-align: center; padding: 60px 20px; background-color: #f8f9fa; border-radius: 10px;">
+        <div style="font-size: 60px; color: #bdc3c7; margin-bottom: 20px;">📄</div>
+        <h2 style="color: #7f8c8d; margin-bottom: 15px;">Новостей пока нет</h2>
+        <p style="color: #95a5a6; max-width: 500px; margin: 0 auto 30px; line-height: 1.6;">
+            На сайте ещё не опубликовано ни одной новости или статьи.
+            Будьте первым, кто поделится интересной информацией!
+        </p>
+
+        {% if user.is_authenticated and user|has_group:'authors' %}
+        <div style="display: flex; gap: 15px; justify-content: center;">
+            <a href="{% url 'news_create' %}"
+               class="btn btn-primary"
+               style="padding: 12px 30px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                Создать первую новость
+            </a>
+            <a href="{% url 'article_create' %}"
+               class="btn btn-success"
+               style="padding: 12px 30px; background-color: #2ecc71; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                Написать статью
+            </a>
+        </div>
+        {% else %}
+        <a href="{% url 'account_login' %}"
+           class="btn btn-primary"
+           style="padding: 12px 30px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            Войдите, чтобы создать новость
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Информационный блок о подписках -->
+    {% if user.is_authenticated %}
+    <div class="subscriptions-info"
+         style="margin-top: 50px; padding: 25px; background-color: #f8f9fa; border-radius: 10px; border-left: 5px solid #3498db;">
+
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <div style="font-size: 24px; margin-right: 15px;">📨</div>
+            <h3 style="margin: 0; color: #2c3e50;">Система подписок</h3>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div class="info-card" style="padding: 15px; background-color: white; border-radius: 8px;">
+                <h4 style="margin-top: 0; color: #3498db; font-size: 16px;">Как подписаться?</h4>
+                <p style="color: #555; font-size: 14px; line-height: 1.5;">
+                    Нажмите на кнопку <span style="display: inline-block; width: 24px; height: 24px; background-color: #2ecc71; color: white; border-radius: 50%; text-align: center; line-height: 24px; font-size: 14px;">+</span> рядом с интересующей категорией. Вы будете получать уведомления о новых публикациях в этой категории.
+                </p>
+            </div>
+
+            <div class="info-card" style="padding: 15px; background-color: white; border-radius: 8px;">
+                <h4 style="margin-top: 0; color: #3498db; font-size: 16px;">Мои подписки</h4>
+                <p style="color: #555; font-size: 14px; line-height: 1.5;">
+                    <a href="{% url 'my_subscriptions' %}"
+                       style="color: #3498db; text-decoration: none; font-weight: bold;">
+                        Посмотреть все мои подписки →
+                    </a>
+                </p>
+                <p style="color: #7f8c8d; font-size: 13px; margin-top: 10px;">
+                    Всего подписок: <strong>{{ user.subscribed_categories.count }}</strong>
+                </p>
+            </div>
+
+            <div class="info-card" style="padding: 15px; background-color: white; border-radius: 8px;">
+                <h4 style="margin-top: 0; color: #3498db; font-size: 16px;">Что получают подписчики?</h4>
+                <ul style="color: #555; font-size: 14px; line-height: 1.5; padding-left: 20px; margin: 0;">
+                    <li>Email уведомления о новых статьях</li>
+                    <li>Заголовок и начало статьи в письме</li>
+                    <li>Ссылку на полную версию</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="subscribe-promo"
+         style="margin-top: 50px; padding: 30px; background: linear-gradient(135deg, #3498db, #2c3e50); color: white; border-radius: 10px; text-align: center;">
+
+        <h3 style="margin-top: 0; margin-bottom: 15px;">💌 Не пропустите важные новости!</h3>
+        <p style="margin-bottom: 25px; font-size: 16px; opacity: 0.9;">
+            Подпишитесь на интересующие категории и получайте уведомления о новых публикациях
+        </p>
+
+        <div style="display: flex; gap: 15px; justify-content: center;">
+            <a href="{% url 'account_login' %}"
+               class="btn btn-light"
+               style="padding: 12px 30px; background-color: white; color: #3498db; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                Войти в систему
+            </a>
+            <a href="{% url 'account_signup' %}"
+               class="btn btn-outline-light"
+               style="padding: 12px 30px; background-color: transparent; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; border: 2px solid white;">
+                Зарегистрироваться
+            </a>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
-<!-- Кнопка создания новости показывается только авторам -->
-{% if user.is_authenticated and user|has_group:'authors' %}
-<div style="margin-top: 20px;">
-    <a href="{% url 'news_create' %}" class="btn btn-success">Создать новость</a>
-    <a href="{% url 'article_create' %}" class="btn btn-info">Создать статью</a>
-</div>
-{% endif %}
+<!-- JavaScript для подтверждения действий -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Подтверждение отписки
+    document.querySelectorAll('.unsubscribe-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            const categoryName = this.getAttribute('title').replace('Отписаться от ', '');
+            if (!confirm(`Вы уверены, что хотите отписаться от категории "${categoryName}"?`)) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Анимация нажатия кнопки подписки
+    document.querySelectorAll('.subscribe-btn, .unsubscribe-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            this.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 300);
+        });
+    });
+});
+</script>
 {% endblock %}

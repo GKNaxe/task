@@ -1,10 +1,42 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.forms import CharField
-
+from django.urls import reverse
+from django.utils import timezone
 
 class Category(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=100, unique=True)
+    subscribers = models.ManyToManyField(
+        User,
+        through='Subscription',
+        related_name='subscribed_categories',
+        blank=True
+    )
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('category_news', kwargs={'category_id': self.id})
+
+
+class Subscription(models.Model):
+    """Промежуточная модель для подписок с дополнительными полями"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+    last_weekly_email = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ['user', 'category']
+
+    def __str__(self):
+        return f"{self.user.username} подписан на {self.category.name}"
+
+    def update_last_email(self):
+        """Обновляет дату последней рассылки"""
+        self.last_weekly_email = timezone.now()
+        self.save()
 
 class Author(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -74,3 +106,18 @@ class Comment(models.Model):
     def dislike(self):
         self.rating -= 1
         self.save()
+
+
+class WeeklyDigest(models.Model):
+    """Модель для хранения отправленных еженедельных дайджестов"""
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    period_start = models.DateTimeField()  # Начало периода (понедельник)
+    period_end = models.DateTimeField()  # Конец периода (воскресенье)
+    posts_count = models.IntegerField(default=0)  # Количество новостей в рассылке
+
+    def __str__(self):
+        return f"Дайджест {self.category.name} за {self.period_start.date()}"
+
+    class Meta:
+        ordering = ['-sent_at']

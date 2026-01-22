@@ -1,0 +1,62 @@
+<!-- news/templates/news/category_news.html -->
+{% extends 'news/default.html' %}
+{% load auth_extras %}
+
+{% block content %}
+<div class="category-news">
+    <div style="background-color: #e9ecef; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+        <h1 style="margin-top: 0;">Категория: {{ category.name }}</h1>
+
+        {% if user.is_authenticated %}
+            <div style="margin-top: 15px;">
+                {% if is_subscribed %}
+                    <span style="color: #28a745; margin-right: 15px;">
+                        ✓ Вы подписаны на эту категорию
+                    </span>
+                    <a href="{% url 'unsubscribe' category.id %}"
+                       class="btn btn-secondary"
+                       style="padding: 8px 15px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 5px;">
+                        Отписаться
+                    </a>
+                {% else %}
+                    <a href="{% url 'subscribe' category.id %}"
+                       class="btn btn-success"
+                       style="padding: 8px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">
+                        📨 Подписаться на обновления
+                    </a>
+                {% endif %}
+            </div>
+        {% else %}
+            <p style="color: #666;">
+                <a href="{% url 'account_login' %}">Войдите</a>, чтобы подписаться на обновления этой категории
+            </p>
+        {% endif %}
+
+        <p style="margin-top: 15px; color: #666;">
+            Подписчиков: {{ category.subscribers.count }}
+        </p>
+    </div>
+
+    {% if news_list %}
+        <h2>Новости в этой категории ({{ news_list.count }})</h2>
+
+        {% for news in news_list %}
+        <div class="news-item">
+            <!-- Тот же код, что и в news_list.html -->
+            <h3><a href="{% url 'news_detail' news.id %}">{{ news.title }}</a></h3>
+            <!-- ... -->
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info" style="padding: 30px; text-align: center;">
+            <h3>В этой категории пока нет новостей</h3>
+            <p>Будьте первым, кто добавит новость!</p>
+            {% if user.is_authenticated and user|has_group:'authors' %}
+                <a href="{% url 'news_create' %}" class="btn btn-primary">
+                    Создать новость
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
