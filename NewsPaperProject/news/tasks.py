@@ -4,6 +4,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import Subscription, Post, Category
 import logging
+from celery import shared_task
 
 logger = logging.getLogger(__name__)
 
@@ -113,3 +114,145 @@ def send_weekly_digest():
                 logger.error(f'Ошибка отправки еженедельной рассылки для {user.email}: {e}')
 
     return total_emails_sent
+
+
+@shared_task
+def send_new_post_notifications(post_id):
+    """Асинхронная отправка уведомлений о новом посте"""
+    try:
+        post = Post.objects.get(id=post_id)
+
+        if post.post_type != Post.NEWS:
+            return
+
+        categories = post.categories.all()
+
+        for category in categories:
+            subscribers = category.subscribers.all()
+
+            for subscriber in subscribers:
+                try:
+                    # Пропускаем если у пользователя нет email
+                    if not subscriber.email:
+                        continue
+
+                    subject = f'Новая новость: {post.title}'
+
+                    html_content = render_to_string(
+                        'news/email/new_post_notification.html',
+                        {
+                            'post': post,
+                            'user': subscriber,
+                            'category': category,
+                        }
+                    )
+
+                    text_content = f'''
+                    Здравствуй, {subscriber.username}. Новая статья в твоём любимом разделе!
+
+                    Заголовок: {post.title}
+
+                    {post.text[:50]}...
+
+                    Читать полностью: http://127.0.0.1:8000/news/{post.id}/
+                    '''
+
+                    msg = EmailMultiAlternatives(
+                        subject=subject,
+                        body=text_content,
+                        from_email='admin@newspaper.com',
+                        to=[subscriber.email],
+                    )
+                    msg.attach_alternative(html_content, "text/html")
+                    msg.send()
+
+                    logger.info(f'Email отправлен {subscriber.email} для поста {post.id}')
+
+                except Exception as e:
+                    logger.error(f'Ошибка отправки email для {subscriber.email}: {e}')
+
+    except Post.DoesNotExist:
+        logger.error(f'Пост с id {post_id} не найден')
+    except Exception as e:
+        logger.error(f'Ошибка в задаче send_new_post_notifications: {e}')
+
+
+@shared_task
+def send_weekly_newsletter():
+    """Еженедельная рассылка с последними новостями"""
+    try:
+        # Дата неделю назад
+        week_ago = timezone.now() - timedelta(days=7)
+
+        # Получаем все категории
+        categories = Category.objects.all()
+
+        for category in categories:
+            # Получаем новости за последнюю неделю в этой категории
+            recent_posts = Post.objects.filter(
+                categories=category,
+                created_at__gte=week_ago,
+                post_type=Post.NEWS
+            ).order_by('-created_at')[:10]  # Последние 10 новостей
+
+            if not recent_posts.exists():
+                continue
+
+            # Получаем подписчиков категории
+            subscribers = category.subscribers.all()
+
+            for subscriber in subscribers:
+                try:
+                    if not subscriber.email:
+                        continue
+
+                    subject = f'Еженедельная рассылка: Новости категории "{category.name}"'
+
+                    html_content = render_to_string(
+                        'news/email/weekly_newsletter.html',
+                        {
+                            'user': subscriber,
+                            'category': category,
+                            'posts': recent_posts,
+                            'week_ago': week_ago,
+                        }
+                    )
+
+                    text_content = f'''
+                    Здравствуй, {subscriber.username}!
+
+                    Еженедельная подборка новостей в категории "{category.name}".
+
+                    За последнюю неделю опубликовано {recent_posts.count()} новостей:
+                    '''
+
+                    for post in recent_posts:
+                        text_content += f'\n- {post.title}\n  {post.text[:100]}...\n'
+
+                    text_content += '\nЧитайте на нашем портале: http://127.0.0.1:8000/news/'
+
+                    msg = EmailMultiAlternatives(
+                        subject=subject,
+                        body=text_content,
+                        from_email='newsletter@newspaper.com',
+                        to=[subscriber.email],
+                    )
+                    msg.attach_alternative(html_content, "text/html")
+                    msg.send()
+
+                    logger.info(f'Еженедельная рассылка отправлена {subscriber.email}')
+
+                except Exception as e:
+                    logger.error(f'Ошибка отправки еженедельной рассылки для {subscriber.email}: {e}')
+
+        logger.info('Еженедельная рассылка завершена')
+
+    except Exception as e:
+        logger.error(f'Ошибка в задаче send_weekly_newsletter: {e}')
+
+
+@shared_task
+def test_celery():
+    """Тестовая задача для проверки работы Celery"""
+    print("Celery работает корректно!")
+    return "Celery task executed successfully"

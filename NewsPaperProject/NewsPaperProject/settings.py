@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'django_apscheduler',
+    'django_celery_beat',
     #'allauth.socialaccount.providers.google',
 ]
 
@@ -172,7 +173,23 @@ ACCOUNT_FORMS = {
     'signup': 'news.forms.CustomSignupForm',
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Или ваш SMTP сервер
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ivkisten07@gmail.com'
+EMAIL_HOST_PASSWORD = 'rester123456'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
 APSCHEDULER_RUN_NOW_TIMEOUT = 25  # Seconds
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL Redis
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Moscow'  # Укажите свою таймзону
+CELERY_ENABLE_UTC = False
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

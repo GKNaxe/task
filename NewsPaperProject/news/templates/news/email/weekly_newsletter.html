@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #3498db;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background-color: #f8f9fa;
+            padding: 40px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+        }
+        .section-title {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        .post-item {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .post-title {
+            color: #2c3e50;
+            font-size: 18px;
+            margin-top: 0;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .stats {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📰 Еженедельная рассылка новостей</h1>
+        <p>Самое интересное за неделю в категории "{{ category.name }}"</p>
+    </div>
+
+    <div class="content">
+        <h2 style="color: #2c3e50;">Здравствуй, {{ user.username }}!</h2>
+
+        <p style="font-size: 16px;">
+            Вот подборка самых свежих новостей из категории
+            <strong>"{{ category.name }}"</strong> за последнюю неделю.
+        </p>
+
+        <div class="stats">
+            <p style="margin: 0;">
+                📊 <strong>Статистика за неделю:</strong><br>
+                • Новостей опубликовано: {{ posts|length }}<br>
+                • Период: с {{ week_ago|date:"d.m.Y" }} по сегодня
+            </p>
+        </div>
+
+        <h3 class="section-title">Последние новости</h3>
+
+        {% if posts %}
+            {% for post in posts %}
+            <div class="post-item">
+                <h4 class="post-title">{{ post.title }}</h4>
+                <p style="color: #666; font-size: 14px;">
+                    📅 {{ post.created_at|date:"d.m.Y H:i" }} |
+                    ✍️ {{ post.author.username }}
+                </p>
+                <p>{{ post.text|truncatechars:200 }}</p>
+                <a href="http://127.0.0.1:8000/news/{{ post.id }}/"
+                   style="color: #3498db; text-decoration: none; font-weight: bold;">
+                    Читать полностью →
+                </a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 30px; background-color: #fff3cd; border-radius: 8px;">
+                <h3 style="margin-top: 0;">За эту неделю новостей не было</h3>
+                <p>Но скоро обязательно появятся!</p>
+            </div>
+        {% endif %}
+
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="http://127.0.0.1:8000/news/category/{{ category.id }}/" class="btn">
+                📖 Все новости категории "{{ category.name }}"
+            </a>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; background-color: #fff3cd; border-radius: 8px;">
+            <h4 style="margin-top: 0;">💡 Не пропустите важное!</h4>
+            <p>Вы получаете это письмо, потому что подписаны на категорию "{{ category.name }}".</p>
+            <p>
+                <a href="http://127.0.0.1:8000/news/unsubscribe/{{ category.id }}/"
+                   style="color: #e74c3c; text-decoration: none;">
+                    🔕 Отписаться от рассылки
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>С уважением, команда Новостного портала</p>
+        <p>
+            <a href="http://127.0.0.1:8000/" style="color: #777;">Наш сайт</a> |
+            <a href="http://127.0.0.1:8000/news/" style="color: #777;">Все новости</a> |
+            <a href="http://127.0.0.1:8000/news/my-subscriptions/" style="color: #777;">Мои подписки</a>
+        </p>
+        <p>© {% now "Y" %} Новостной портал. Все права защищены.</p>
+        <p style="font-size: 11px; color: #999;">
+            Это автоматическое письмо. Пожалуйста, не отвечайте на него.
+        </p>
+    </div>
+</body>
+</html>

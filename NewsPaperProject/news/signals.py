@@ -7,6 +7,7 @@ from django.utils import timezone
 from .models import Post, Category, Subscription
 import logging
 from datetime import timedelta
+from .tasks import send_new_post_notifications
 
 logger = logging.getLogger(__name__)
 
@@ -105,3 +106,11 @@ def send_category_notification(post, category):
             logger.error(f'Ошибка отправки email для {subscriber.email}: {e}')
 
     logger.info(f'Отправлено {email_count} email уведомлений для категории "{category.name}"')
+
+@receiver(post_save, sender=Post)
+def notify_subscribers_async(sender, instance, created, **kwargs):
+    """Отправляет уведомления подписчикам через Celery"""
+    if created and instance.post_type == Post.NEWS:
+        # Запускаем асинхронную задачу
+        send_new_post_notifications.delay(instance.id)
+        print(f'Задача отправки уведомлений поставлена в очередь для поста {instance.id}')
